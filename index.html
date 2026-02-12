@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eBay Listing Master Tool (Final Ver.)</title>
+    <title>eBay Listing Master Tool (Ver 4.0 - Auto JSON)</title>
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <style>
         /* 기본 스타일 */
@@ -38,9 +38,15 @@
         .right-panel { flex: 1.5; border-left: 1px solid #eee; padding-left: 20px; }
         .result-group { margin-bottom: 20px; border: 1px solid #eee; padding: 15px; border-radius: 8px; background: #fafafa; }
         .result-label { font-weight: bold; display: block; margin-bottom: 5px; color: #555; }
+        
+        /* 테이블 스타일 */
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f0f7ff; width: 30%; }
+        
+        /* 파일 업로드 영역 스타일 */
+        .file-upload-area { background: #e8f4fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #b3d9ff; display: flex; align-items: center; justify-content: space-between; }
+        .file-upload-area h4 { margin: 0; color: #005fbc; display: flex; align-items: center; }
         
         @media (max-width: 768px) { .assembler-container { flex-direction: column; } .right-panel { border-left: none; padding-left: 0; border-top: 1px solid #eee; padding-top: 20px; } }
     </style>
@@ -68,13 +74,28 @@
 
 <div id="step2" class="tab-content">
     <h2 style="margin-top:0;">🛠️ 리스팅 데이터 조립</h2>
+    
+    <div class="file-upload-area">
+        <div>
+            <h4 style="margin-bottom: 5px;">📂 1. 베이스 HTML 템플릿 업로드</h4>
+            <span style="font-size: 12px; color: #666;">* 'REPLACE THIS SECTION...' 주석이 포함된 파일</span>
+        </div>
+        <input type="file" id="templateFileInput" accept=".html">
+    </div>
+
     <div class="assembler-container">
         <div class="left-panel">
-            <h4>👇 Gems가 준 JSON 붙여넣기</h4>
-            <textarea id="jsonInput" style="height: 400px;" placeholder='{"titles": {...}, "item_specifics": {...}}'></textarea>
+            <h4>👇 2. Gems가 준 JSON 붙여넣기</h4>
+            <textarea id="jsonInput" style="height: 400px;" placeholder='{
+  "titles": {...}, 
+  "item_specifics": {...},
+  "description_html": "...",
+  "caution": [...]
+}'></textarea>
             <br><br>
             <button onclick="generateListing()" style="width:100%;">🚀 리스팅 생성하기</button>
         </div>
+
         <div class="right-panel">
             <div id="outputArea" style="display:none;">
                 <div class="result-group">
@@ -86,12 +107,12 @@
                     <input type="text" id="titleB" style="width:100%; padding:8px;" readonly>
                 </div>
                 <div class="result-group">
-                    <span class="result-label">Item Specifics (이미지 순서대로!)</span>
+                    <span class="result-label">Item Specifics (Check Only)</span>
                     <table id="specsTable"></table>
                 </div>
                 <div class="result-group">
                     <span class="result-label">🔥 HTML Full Code <button class="copy-btn" onclick="copyText('finalHtml')">코드 복사</button></span>
-                    <textarea id="finalHtml" style="height: 200px;"></textarea>
+                    <textarea id="finalHtml" style="height: 300px; color: #005fbc; font-weight: bold;"></textarea>
                 </div>
             </div>
         </div>
@@ -99,6 +120,7 @@
 </div>
 
 <script>
+    // 탭 전환 함수
     function openTab(tabId) {
         document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -106,12 +128,14 @@
         event.currentTarget.classList.add('active');
     }
 
+    // 텍스트 복사 함수
     function copyText(elementId) {
         const copyText = document.getElementById(elementId);
         copyText.select();
         document.execCommand("copy");
     }
 
+    // ================= STEP 1: OCR Logic (유지) =================
     async function processImage(input) {
         if (!input.files || !input.files[0]) return;
         const file = input.files[0];
@@ -155,233 +179,85 @@
         };
     }
 
-    // ============================================================
-    // [HTML 템플릿 영역] 사장님이 제공한 Ver 2.0 원본을 그대로 분리 적용
-    // ============================================================
-    
-    // 1. Content 앞부분 (Header ~ Item Details 탭 시작)
-    const htmlTemplateBefore = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Product Details</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        .product-container { max-width: 1000px; margin: 0 auto; font-family: 'Arial', sans-serif; background: #fff; border: 1px solid #e0e0e0; }
-        .header { background: linear-gradient(135deg, #F8FAFD 0%, #f8f9fa 100%); padding: 10px 30px; display: flex; align-items: center; border-bottom: 1px solid #e9ecef; }
-        .logo { width: 60px; height: 60px; background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 10px; display: flex; align-items: center; justify-content: center; margin-right: 60px; font-weight: bold; color: #495057; font-size: 18px; }
-        .brand-name { font-size: 28px; font-weight: bold; color: #343a40 !important; text-shadow: 1px 1px 2px rgba(0,0,0,0.1); }
-        .tab-container { background: #f8f9fa; border-bottom: 3px solid #4A90E2; }
-        .tab-nav { display: flex; overflow-x: auto; white-space: nowrap; }
-        .tab-input { display: none; }
-        .tab-label { padding: 12px 18px; cursor: pointer; font-size: 13px; font-weight: 600; color: #666; border: 2px solid #ddd; border-bottom: 3px solid transparent; border-radius: 8px 8px 0 0; transition: all 0.3s ease; white-space: nowrap; min-width: fit-content; display: block; text-align: center; background: #f8f9fa; margin-right: 2px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); line-height: 1.3; position: relative; }
-        .tab-label:hover { background: #e9ecef; color: #4A90E2; transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
-        .tab-input:checked + .tab-label { color: #4A90E2; border-bottom-color: #4A90E2; background: white; border-color: #4A90E2; transform: translateY(-1px); box-shadow: 0 3px 6px rgba(0,0,0,0.1); }
-        .tab-input:checked + .tab-label::after { content: ''; position: absolute; bottom: -3px; left: 0; right: 0; height: 3px; background: white; }
-        .tab-content { position: relative; }
-        .tab-pane { display: none; padding: 30px; min-height: 400px; }
-        #tab-details:checked ~ .tab-content .tab-pane[data-tab="item-details"] { display: block; }
-        #tab-shipping:checked ~ .tab-content .tab-pane[data-tab="shipping"] { display: block; }
-        #tab-customs:checked ~ .tab-content .tab-pane[data-tab="customs"] { display: block; }
-        #tab-returns:checked ~ .tab-content .tab-pane[data-tab="returns"] { display: block; }
-        #tab-about:checked ~ .tab-content .tab-pane[data-tab="about"] { display: block; }
-        .tab-pane h3 { color: #333; margin-bottom: 20px; font-size: 24px; border-bottom: 2px solid #4A90E2; padding-bottom: 10px; }
-        .tab-pane p { line-height: 1.8; color: #555; margin-bottom: 15px; }
-        .tab-pane ul { line-height: 1.8; color: #555; margin-left: 20px; margin-bottom: 20px; }
-        .tab-pane li { margin-bottom: 10px; }
-        .shipping-info { background: #e8f4fd; border: 1px solid #b3d9ff; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
-        .shipping-info h4 { color: #0066cc; margin-bottom: 10px; }
-        @media (max-width: 768px) { .header { flex-direction: column; text-align: center; padding: 20px; } .logo { margin-right: 0; margin-bottom: 15px; } .tab-nav { flex-wrap: wrap; } .tab-label { flex: 1; min-width: calc(50% - 1px); font-size: 11px; padding: 10px 8px; margin-right: 1px; } .tab-pane { padding: 20px 15px; } }
-    </style>
-</head>
-<body>
-    <div class="product-container">
-        <div class="header">
-            <div class="brand-name" style="color: #343a40;">K-Family Life</div>
-        </div>
-        <input type="radio" id="tab-details" name="tabs" class="tab-input" checked>
-        <input type="radio" id="tab-shipping" name="tabs" class="tab-input">
-        <input type="radio" id="tab-customs" name="tabs" class="tab-input">
-        <input type="radio" id="tab-returns" name="tabs" class="tab-input">
-        <input type="radio" id="tab-about" name="tabs" class="tab-input">
-        <div class="tab-container">
-            <div class="tab-nav">
-                <label for="tab-details" class="tab-label">Item<br>Details</label>
-                <label for="tab-shipping" class="tab-label">International<br>Shipping</label>
-                <label for="tab-customs" class="tab-label">Customs &<br>Duties</label>
-                <label for="tab-returns" class="tab-label">Refunds/<br>Returns</label>
-                <label for="tab-about" class="tab-label">About<br>Us</label>
-            </div>
-        </div>
-        <div class="tab-content">
-            <div class="tab-pane" data-tab="item-details">
-                <h3>📋 Item Details</h3>`;
+    // ================= STEP 2: Assembler Logic (업데이트) =================
+    async function generateListing() {
+        // 1. 입력값 가져오기
+        const jsonStr = document.getElementById('jsonInput').value;
+        const templateFile = document.getElementById('templateFileInput').files[0];
 
-    // 2. Content 뒷부분 (Item Details 닫는 태그 ~ 끝)
-    const htmlTemplateAfter = `            </div>
-            
-            <div class="tab-pane" data-tab="shipping">
-                <h3>🚚 International Shipping</h3>
-                <div class="shipping-info">
-                    <h4>📦 Shipping Methods</h4>
-                    <p>• <strong>Standard International</strong></p>
-                    <p>7-14 business days</p>
-                    <p>Free Shipping</p>
-                    <p>• <strong>Expedited International</strong></p>
-                    <p>An additional shipping fee of $10 or more will be charged.</p>
-                    <p>The amount varies depending on the destination country.</p>
-                    <p>3-7 business days</p>
-                </div>
-                <div class="shipping-info">
-                    <h4>🌍 Shipping Coverage</h4>
-                    <p>We ship worldwide to most countries including:</p>
-                    <p>• United States • Canada • United Kingdom • Germany • France • Australia • Japan • and many more!</p>
-                </div>
-                <div class="shipping-info">
-                    <h4>📋 Shipping Information</h4>
-                    <p>• All items are carefully packaged to ensure safe delivery</p>
-                    <p>• Tracking information provided for all shipments</p>
-                    <p>• Insurance available for high-value items</p>
-                    <p>• Items are shipped from South Korea</p>
-                </div>
-                <p><strong>Note:</strong> Delivery times may vary depending on your location and local customs processing.</p>
-            </div>
-            
-            <div class="tab-pane" data-tab="customs">
-                <h3>🛃 Customs & Duties</h3>
-                <div class="shipping-info">
-                    <h4>🇺🇸 For Buyers in the United States</h4>
-                    <p>• <strong>No Extra Fees:</strong> Import duties and taxes are <strong>included</strong> in the item price or shipping cost.</p>
-                    <p>• <strong>DDP Method:</strong> Items shipped to the U.S. are sent under the <strong>Delivered Duty Paid (DDP)</strong> method. This means all import-related charges are prepaid.</p>
-                    <p>• You <strong>do not</strong> need to pay any additional fees when your order arrives.</p>
-                </div>
-                <div class="shipping-info">
-                    <h4>🌍 For Buyers Outside the United States</h4>
-                    <p>• <strong>Buyer's Responsibility:</strong> Import duties, taxes, and charges are <strong>NOT included</strong> in the item price or shipping cost.</p>
-                    <p>• These charges are the <strong>buyer's responsibility</strong>.</p>
-                    <p>• Please check with your country's customs office to determine what these additional costs will be before bidding or buying.</p>
-                </div>
-            </div>
-            
-            <div class="tab-pane" data-tab="returns">
-                <h3>↩️ Refunds & Returns</h3>
-                <div class="shipping-info">
-                    <h4>🔄 Return Policy</h4>
-                    <p>• 30-day return period from delivery date</p>
-                    <p>• Items must be in original condition and packaging</p>
-                    <p>• Return shipping costs are buyer's responsibility (unless item is defective)</p>
-                    <p>• Once we receive the returned item, the refund process will begin, and you will be contacted within 24 hours.</p>
-                </div>
-                <div class="shipping-info">
-                    <h4>💸 Refund Process</h4>
-                    <p>• Contact us before returning any item</p>
-                    <p>• We'll provide return instructions and address</p>
-                    <p>• Use trackable shipping method for returns</p>
-                    <p>• Original shipping costs are non-refundable</p>
-                </div>
-                <div class="shipping-info">
-                    <h4>🛡️ Warranty & Defects</h4>
-                    <p>• Damaged items during shipping - contact us immediately</p>
-                    <p>• We'll arrange return shipping for defective items</p>
-                    <p>• Replacement or full refund for confirmed defects</p>
-                </div>
-                <p><strong>For return requests, please contact us through eBay messaging with your order number and reason for return.</strong></p>
-            </div>
-            
-            <div class="tab-pane" data-tab="about">
-                <h3>🏢 About Us</h3>
-                <div class="shipping-info">
-                    <h4>👋 Who We Are</h4>
-                    <p>We are a trusted Korean seller specializing in high-quality products. With over 7 years of experience in international e-commerce, we pride ourselves on excellent customer service and authentic products.</p>
-                </div>
-                <div class="shipping-info">
-                    <h4>🎯 Our Mission</h4>
-                    <p>To provide international customers with access to the best Korean products at competitive prices, backed by reliable service and fast shipping.</p>
-                </div>
-                <div class="shipping-info">
-                    <h4>⭐ Why Choose Us?</h4>
-                    <p>• Authentic Korean products only</p>
-                    <p>• Fast and reliable international shipping</p>
-                    <p>• Excellent customer service in English</p>
-                    <p>• Secure packaging and handling</p>
-                </div>
-                <div class="shipping-info">
-                    <h4>📞 Contact Information</h4>
-                    <p>• eBay Messaging: Preferred method for fastest response</p>
-                    <p>• Response Time: Within 24 hours</p>
-                    <p>• Languages: Korean, English</p>
-                    <p>• Business Hours: Monday—Friday, 9 AM – 6 PM (KST / Korea Standard Time)</p>
-                </div>
-                <p><strong>Thank you for choosing us! We look forward to serving you.</strong></p>
-            </div>
-        </div>
-    </div>
-</body>
-</html>`;
-
-    function generateListing() {
-        const inputStr = document.getElementById('jsonInput').value;
-        if (!inputStr) { alert("JSON 데이터를 넣어주세요!"); return; }
+        // 2. 유효성 검사
+        if (!templateFile) { alert("먼저 '베이스 HTML 템플릿' 파일을 업로드해주세요!"); return; }
+        if (!jsonStr) { alert("JSON 데이터를 붙여넣어 주세요!"); return; }
 
         try {
-            const data = JSON.parse(inputStr);
+            const data = JSON.parse(jsonStr);
             
-            // 타이틀
-            document.getElementById('titleA').value = data.titles.option_a;
-            document.getElementById('titleB').value = data.titles.option_b;
+            // --- 데이터 처리 ---
 
-            // 스펙 테이블 (Gems가 준 순서 그대로 렌더링)
-            const specsTable = document.getElementById('specsTable');
-            let tableHtml = "";
-            let specsListHtml = "<ul>"; 
+            // (1) 타이틀 채우기
+            document.getElementById('titleA').value = data.titles.option_a || "";
+            document.getElementById('titleB').value = data.titles.option_b || "";
 
+            // (2) 스펙 테이블 생성 (화면 표시용 + HTML 삽입용)
+            let tableRows = "";
             for (const key in data.item_specifics) {
                 if (data.item_specifics.hasOwnProperty(key)) {
-                    const value = data.item_specifics[key];
-                    tableHtml += `<tr><th>${key}</th><td>${value}</td></tr>`;
-                    specsListHtml += `<li><strong>${key}:</strong> ${value}</li>`;
+                    // key와 value가 있는지 확인
+                    const specKey = key || "Feature";
+                    const specValue = data.item_specifics[key] || "N/A";
+                    tableRows += `<tr><th style="background:#f9f9f9; padding:8px; border:1px solid #ddd; width:30%;">${specKey}</th><td style="padding:8px; border:1px solid #ddd;">${specValue}</td></tr>`;
                 }
             }
-            specsListHtml += "</ul>";
-            specsTable.innerHTML = tableHtml;
+            document.getElementById('specsTable').innerHTML = tableRows;
+            
+            // HTML에 삽입될 스펙 테이블 (스타일 포함)
+            const specsHtmlBlock = `
+                <div style="margin-top: 30px;">
+                    <h4 style="border-bottom: 2px solid #eee; padding-bottom: 10px; color: #333;">⚙️ Specifications</h4>
+                    <table style="width:100%; border-collapse: collapse; font-size: 14px; margin-top: 10px;">
+                        ${tableRows}
+                    </table>
+                </div>`;
 
-            // HTML Body 조립 (Product-Specific Content)
-            let descHtml = "";
-            const productName = data.item_specifics["Product Name"] || "Product Details";
-            
-            descHtml += `<div style="margin-bottom: 30px;">
-                <h2 style="color: #333; font-size: 22px; margin-bottom: 15px;">${productName}</h2>`;
-            
-            if (data.description_points) {
-                descHtml += `<div class="shipping-info" style="background: #fff8f8; border-color: #ffcccc;">
-                    <h4 style="color: #d9534f; margin-top:0;">🔥 Key Benefits</h4>
-                    <ul>`;
-                data.description_points.forEach(point => {
-                    descHtml += `<li>${point}</li>`;
-                });
-                descHtml += `</ul></div>`;
+            // (3) 주의사항(Caution) 생성
+            let cautionHtmlBlock = "";
+            if (data.caution && data.caution.length > 0) {
+                cautionHtmlBlock = `<div style="margin-top: 25px; background: #fff5f5; padding: 15px; border-radius: 8px;">
+                    <h4 style="color: #d9534f; margin-top:0;">⚠️ Caution</h4>
+                    <ul style="color: #555; padding-left: 20px; margin-bottom: 0;">
+                        ${data.caution.map(c => `<li>${c}</li>`).join('')}
+                    </ul>
+                </div>`;
             }
 
-            descHtml += `<h4>⚙️ Specifications</h4>`;
-            descHtml += specsListHtml;
+            // (4) AI 마케팅 설명 (HTML) 가져오기
+            const marketingHtml = data.description_html || "<p>상세 설명 데이터가 없습니다.</p>";
 
-            if (data.caution) {
-                descHtml += `<h4>⚠️ Caution</h4><ul style="color: #d9534f;">`;
-                data.caution.forEach(item => {
-                    descHtml += `<li>${item}</li>`;
-                });
-                descHtml += `</ul>`;
-            }
-            descHtml += `</div>`;
+            // (5) 최종 콘텐츠 덩어리 합체 (설명 + 스펙 + 주의사항)
+            const fullContentBlock = marketingHtml + specsHtmlBlock + cautionHtmlBlock;
 
-            // 최종 합체
-            const finalCode = htmlTemplateBefore + descHtml + htmlTemplateAfter;
-            document.getElementById('finalHtml').value = finalCode;
-            document.getElementById('outputArea').style.display = 'block';
+            // --- 파일 읽기 및 조립 ---
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                let templateHtml = e.target.result;
+                
+                // ★ 템플릿의 주석(표식)을 찾아서 교체합니다.
+                const marker = "";
+
+                if (templateHtml.includes(marker)) {
+                    const finalCode = templateHtml.replace(marker, fullContentBlock);
+                    
+                    document.getElementById('finalHtml').value = finalCode;
+                    document.getElementById('outputArea').style.display = 'block';
+                    alert("✅ 리스팅 생성 완료!");
+                } else {
+                    alert("⚠️ 오류: 템플릿 파일에서 약속된 주석을 찾을 수 없습니다.\n\n'' \n\n이 문장이 HTML 파일 안에 들어있는지 확인해주세요.");
+                }
+            };
+            reader.readAsText(templateFile);
 
         } catch (e) {
-            alert("JSON 형식이 잘못되었습니다.\n오류내용: " + e.message);
+            alert("❌ JSON 파싱 오류!\nGems가 준 JSON 데이터 형식을 확인하세요.\n\n오류 내용: " + e.message);
         }
     }
 </script>
