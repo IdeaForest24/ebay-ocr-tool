@@ -179,7 +179,7 @@
         };
     }
 
-    // ================= STEP 2: Assembler Logic (업데이트) =================
+    // ================= STEP 2: Assembler Logic (Specs HTML 제거 버전) =================
     async function generateListing() {
         // 1. 입력값 가져오기
         const jsonStr = document.getElementById('jsonInput').value;
@@ -198,11 +198,10 @@
             document.getElementById('titleA').value = data.titles.option_a || "";
             document.getElementById('titleB').value = data.titles.option_b || "";
 
-            // (2) 스펙 테이블 생성 (화면 표시용 + HTML 삽입용)
+            // (2) 스펙 테이블 생성 (★ 화면 확인용으로만 남김)
             let tableRows = "";
             for (const key in data.item_specifics) {
                 if (data.item_specifics.hasOwnProperty(key)) {
-                    // key와 value가 있는지 확인
                     const specKey = key || "Feature";
                     const specValue = data.item_specifics[key] || "N/A";
                     tableRows += `<tr><th style="background:#f9f9f9; padding:8px; border:1px solid #ddd; width:30%;">${specKey}</th><td style="padding:8px; border:1px solid #ddd;">${specValue}</td></tr>`;
@@ -210,14 +209,8 @@
             }
             document.getElementById('specsTable').innerHTML = tableRows;
             
-            // HTML에 삽입될 스펙 테이블 (스타일 포함)
-            const specsHtmlBlock = `
-                <div style="margin-top: 30px;">
-                    <h4 style="border-bottom: 2px solid #eee; padding-bottom: 10px; color: #333;">⚙️ Specifications</h4>
-                    <table style="width:100%; border-collapse: collapse; font-size: 14px; margin-top: 10px;">
-                        ${tableRows}
-                    </table>
-                </div>`;
+            // ★ [수정됨] HTML 삽입용 스펙 테이블 생성 코드 삭제함 (사장님 요청)
+            // const specsHtmlBlock = ... (삭제)
 
             // (3) 주의사항(Caution) 생성
             let cautionHtmlBlock = "";
@@ -233,23 +226,23 @@
             // (4) AI 마케팅 설명 (HTML) 가져오기
             const marketingHtml = data.description_html || "<p>상세 설명 데이터가 없습니다.</p>";
 
-            // (5) 최종 콘텐츠 덩어리 합체 (설명 + 스펙 + 주의사항)
-            const fullContentBlock = marketingHtml + specsHtmlBlock + cautionHtmlBlock;
+            // (5) 최종 콘텐츠 덩어리 합체 (설명 + 주의사항) -> ★ 스펙 테이블 제외됨
+            const fullContentBlock = marketingHtml + cautionHtmlBlock;
 
             // --- 파일 읽기 및 조립 ---
             const reader = new FileReader();
             reader.onload = function(e) {
                 let templateHtml = e.target.result;
                 
-                // ★ 템플릿의 주석(표식)을 찾아서 교체합니다.
-                const marker = "<!-- REPLACE THIS SECTION WITH PRODUCT-SPECIFIC CONTENT -->";
+                // 템플릿의 주석(표식)을 찾아서 교체
+                const marker = "";
 
                 if (templateHtml.includes(marker)) {
                     const finalCode = templateHtml.replace(marker, fullContentBlock);
                     
                     document.getElementById('finalHtml').value = finalCode;
                     document.getElementById('outputArea').style.display = 'block';
-                    alert("✅ 리스팅 생성 완료!");
+                    // alert("✅ 리스팅 생성 완료!"); (너무 자주 떠서 귀찮으시면 주석 처리)
                 } else {
                     alert("⚠️ 오류: 템플릿 파일에서 약속된 주석을 찾을 수 없습니다.\n\n'' \n\n이 문장이 HTML 파일 안에 들어있는지 확인해주세요.");
                 }
