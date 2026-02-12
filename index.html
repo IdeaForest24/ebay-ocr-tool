@@ -107,7 +107,7 @@
 
 <h1>
     eBay Listing Assistant 
-    <span class="ver-badge">Ver 1.0</span>
+    <span class="ver-badge">Ver 1.1</span>
 </h1>
 
 <div class="tab-menu">
@@ -117,14 +117,24 @@
 
 <div id="step1" class="tab-content active">
     <h2 style="margin-top:0;">📷 이미지 텍스트 추출 (다중 파일 지원)</h2>
+    
     <div class="upload-box" onclick="document.getElementById('fileInput').click()">
         <p>📁 <strong>제품 이미지들(최대 20장)</strong>을 한 번에 업로드하세요</p>
         <input type="file" id="fileInput" accept="image/*" multiple style="display: none;" onchange="processImages(this)">
     </div>
+
+    <div style="margin-bottom: 5px; font-weight: bold; color: #555;">📝 AI 지시문 (프롬프트) 입력</div>
+    <textarea id="userPrompt" style="height: 100px; margin-bottom: 20px; background-color: #fffde7; border: 1px solid #e6db74;" placeholder="예) 아래 내용을 바탕으로 eBay 리스팅 제목과 설명을 영어로 작성해줘."></textarea>
+
     <div id="ocrStatus">대기 중...</div>
     <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
-    <textarea id="resultText" style="height: 300px;" placeholder="추출된 텍스트가 여기에 순차적으로 나타납니다..."></textarea>
-    <div style="margin-top: 10px; text-align: right;"><button onclick="copyText('resultText')">📋 텍스트 복사</button></div>
+    
+    <div style="margin-bottom: 5px; font-weight: bold; color: #555;">📄 추출된 텍스트 결과</div>
+    <textarea id="resultText" style="height: 300px;" placeholder="이미지에서 추출된 텍스트가 여기에 순차적으로 나타납니다..."></textarea>
+    
+    <div style="margin-top: 10px; text-align: right;">
+        <button onclick="copyCombinedText()" style="background-color: #2e7d32;">📋 전체 복사 (지시문 + 텍스트)</button>
+    </div>
 </div>
 
 <div id="step2" class="tab-content">
@@ -199,6 +209,42 @@
             img.onload = () => resolve(img);
             img.onerror = (e) => reject(e);
         });
+    }
+
+    // [추가] 지시문 + OCR 결과 합쳐서 복사하기
+    function copyCombinedText() {
+        const prompt = document.getElementById('userPrompt').value;
+        const result = document.getElementById('resultText').value;
+
+        // 내용이 없으면 알림
+        if (!result && !prompt) {
+            alert("복사할 내용이 없습니다.");
+            return;
+        }
+
+        // 두 내용 합치기 (중간에 줄바꿈 2번)
+        const combinedText = prompt + "\n\n" + result;
+
+        // 임시 엘리먼트를 만들어 복사 (가장 호환성 높은 방법)
+        const tempElem = document.createElement('textarea');
+        tempElem.value = combinedText;
+        document.body.appendChild(tempElem);
+        tempElem.select();
+        document.execCommand("copy");
+        document.body.removeChild(tempElem);
+
+        // 복사 완료 효과 (버튼 깜빡임 등 대신 간단히 알림)
+        // alert("✅ 전체 내용이 클립보드에 복사되었습니다!"); // 너무 자주 뜨면 귀찮으니 주석 처리하거나 필요시 사용
+        
+        // 버튼 텍스트를 잠시 '복사됨!'으로 변경했다가 되돌리기 (UI 피드백)
+        const btn = event.target;
+        const originalText = btn.innerText;
+        btn.innerText = "✅ 복사 완료!";
+        btn.style.backgroundColor = "#4caf50";
+        setTimeout(() => {
+            btn.innerText = originalText;
+            btn.style.backgroundColor = "#2e7d32";
+        }, 1500);
     }
 
     async function processImages(input) {
