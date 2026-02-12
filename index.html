@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eBay Listing Master Tool</title>
+    <title>eBay Listing Assistant</title>
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <style>
         /* 기본 스타일 */
@@ -20,7 +20,7 @@
         .tab-content.active { display: block; }
 
         /* 입력/출력 요소 */
-        textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical; }
+        textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical; box-sizing: border-box; }
         button { background-color: #005fbc; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 15px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         button:hover { background-color: #004c99; }
         .copy-btn { background: #666; font-size: 12px; padding: 5px 10px; margin-left: 10px; }
@@ -47,68 +47,24 @@
         /* 파일 업로드 영역 스타일 */
         .file-upload-area { background: #e8f4fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #b3d9ff; display: flex; align-items: center; justify-content: space-between; }
         .file-upload-area h4 { margin: 0; color: #005fbc; display: flex; align-items: center; }
+
+        /* 하단 푸터 (버전 정보) */
+        .footer-info {
+            text-align: right;
+            margin-top: 50px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            color: #888;
+            font-size: 12px;
+            font-weight: bold;
+        }
         
         @media (max-width: 768px) { .assembler-container { flex-direction: column; } .right-panel { border-left: none; padding-left: 0; border-top: 1px solid #eee; padding-top: 20px; } }
     </style>
 </head>
 <body>
 
-<h1>
-    eBay 리스팅 어드바이스 툴    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eBay Listing Master Tool</title>
-    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
-    <style>
-        /* 기본 스타일 */
-        body { font-family: 'Noto Sans KR', sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #f4f6f8; color: #333; }
-        h1 { text-align: center; color: #005fbc; margin-bottom: 30px; }
-        
-        /* 탭 메뉴 */
-        .tab-menu { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
-        .tab-btn { flex: 1; padding: 15px; cursor: pointer; text-align: center; font-weight: bold; font-size: 16px; color: #666; background: #eee; border: none; border-radius: 8px 8px 0 0; margin-right: 2px; transition: 0.3s; }
-        .tab-btn:hover { background: #e0e0e0; }
-        .tab-btn.active { background: #005fbc; color: white; }
-        
-        .tab-content { display: none; background: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .tab-content.active { display: block; }
-
-        /* 입력/출력 요소 */
-        textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical; }
-        button { background-color: #005fbc; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 15px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        button:hover { background-color: #004c99; }
-        .copy-btn { background: #666; font-size: 12px; padding: 5px 10px; margin-left: 10px; }
-
-        /* Step 1 OCR 스타일 */
-        .upload-box { border: 2px dashed #ccc; padding: 30px; text-align: center; border-radius: 8px; margin-bottom: 20px; cursor: pointer; transition: 0.3s; background: #fafafa; }
-        .upload-box:hover { border-color: #005fbc; background-color: #f0f7ff; }
-        #ocrStatus { margin: 10px 0; font-weight: bold; color: #005fbc; text-align: center; min-height: 20px; }
-        .progress-bar { width: 100%; background-color: #e0e0e0; border-radius: 4px; overflow: hidden; height: 10px; margin-bottom: 20px; display: none; }
-        .progress-fill { height: 100%; background-color: #4caf50; width: 0%; transition: width 0.3s; }
-
-        /* Step 2 조립기 스타일 */
-        .assembler-container { display: flex; gap: 20px; }
-        .left-panel { flex: 1; }
-        .right-panel { flex: 1.5; border-left: 1px solid #eee; padding-left: 20px; }
-        .result-group { margin-bottom: 20px; border: 1px solid #eee; padding: 15px; border-radius: 8px; background: #fafafa; }
-        .result-label { font-weight: bold; display: block; margin-bottom: 5px; color: #555; }
-        
-        /* 테이블 스타일 */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f0f7ff; width: 30%; }
-        
-        /* 파일 업로드 영역 스타일 */
-        .file-upload-area { background: #e8f4fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #b3d9ff; display: flex; align-items: center; justify-content: space-between; }
-        .file-upload-area h4 { margin: 0; color: #005fbc; display: flex; align-items: center; }
-        
-        @media (max-width: 768px) { .assembler-container { flex-direction: column; } .right-panel { border-left: none; padding-left: 0; border-top: 1px solid #eee; padding-top: 20px; } }
-    </style>
-</head>
-<body>
-
-<h1>
-    eBay Listing Assistant 
-    <span class="ver-badge">Ver 1.1</span>
-</h1>
+<h1>eBay Listing Assistant</h1>
 
 <div class="tab-menu">
     <button class="tab-btn active" onclick="openTab('step1')">Step 1. 텍스트 추출 (OCR)</button>
@@ -123,17 +79,17 @@
         <input type="file" id="fileInput" accept="image/*" multiple style="display: none;" onchange="processImages(this)">
     </div>
 
-    <div style="margin-bottom: 5px; font-weight: bold; color: #555;">📝 AI 지시문 (프롬프트) 입력</div>
+    <div style="margin-bottom: 5px; font-weight: bold; color: #555;">📝 키워드, 제품명</div>
     <textarea id="userPrompt" style="height: 100px; margin-bottom: 20px; background-color: #fffde7; border: 1px solid #e6db74;" placeholder="예) 아래 내용을 바탕으로 eBay 리스팅 제목과 설명을 영어로 작성해줘."></textarea>
 
     <div id="ocrStatus">대기 중...</div>
     <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
     
-    <div style="margin-bottom: 5px; font-weight: bold; color: #555;">📄 추출된 텍스트 결과</div>
+    <div style="margin-bottom: 5px; font-weight: bold; color: #555;">📄 추출된 텍스트</div>
     <textarea id="resultText" style="height: 300px;" placeholder="이미지에서 추출된 텍스트가 여기에 순차적으로 나타납니다..."></textarea>
     
     <div style="margin-top: 10px; text-align: right;">
-        <button onclick="copyCombinedText()" style="background-color: #2e7d32;">📋 전체 복사 (지시문 + 텍스트)</button>
+        <button onclick="copyCombinedText()" style="background-color: #2e7d32;">📋 전체 복사</button>
     </div>
 </div>
 
@@ -184,6 +140,10 @@
     </div>
 </div>
 
+<div class="footer-info">
+    Ver. 1.1
+</div>
+
 <script>
     // 탭 전환 함수
     function openTab(tabId) {
@@ -193,22 +153,11 @@
         event.currentTarget.classList.add('active');
     }
 
-    // 텍스트 복사 함수
+    // 텍스트 복사 함수 (단일 요소)
     function copyText(elementId) {
         const copyText = document.getElementById(elementId);
         copyText.select();
         document.execCommand("copy");
-    }
-
-// ================= STEP 1: OCR Logic (다중 이미지 지원 수정됨) =================
-    // 이미지 로드 헬퍼 함수
-    function loadImage(file) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.src = URL.createObjectURL(file);
-            img.onload = () => resolve(img);
-            img.onerror = (e) => reject(e);
-        });
     }
 
     // [추가] 지시문 + OCR 결과 합쳐서 복사하기
@@ -216,16 +165,13 @@
         const prompt = document.getElementById('userPrompt').value;
         const result = document.getElementById('resultText').value;
 
-        // 내용이 없으면 알림
         if (!result && !prompt) {
             alert("복사할 내용이 없습니다.");
             return;
         }
 
-        // 두 내용 합치기 (중간에 줄바꿈 2번)
         const combinedText = prompt + "\n\n" + result;
 
-        // 임시 엘리먼트를 만들어 복사 (가장 호환성 높은 방법)
         const tempElem = document.createElement('textarea');
         tempElem.value = combinedText;
         document.body.appendChild(tempElem);
@@ -233,10 +179,6 @@
         document.execCommand("copy");
         document.body.removeChild(tempElem);
 
-        // 복사 완료 효과 (버튼 깜빡임 등 대신 간단히 알림)
-        // alert("✅ 전체 내용이 클립보드에 복사되었습니다!"); // 너무 자주 뜨면 귀찮으니 주석 처리하거나 필요시 사용
-        
-        // 버튼 텍스트를 잠시 '복사됨!'으로 변경했다가 되돌리기 (UI 피드백)
         const btn = event.target;
         const originalText = btn.innerText;
         btn.innerText = "✅ 복사 완료!";
@@ -247,10 +189,19 @@
         }, 1500);
     }
 
+    // ================= STEP 1: OCR Logic (다중 이미지 지원) =================
+    function loadImage(file) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            img.onload = () => resolve(img);
+            img.onerror = (e) => reject(e);
+        });
+    }
+
     async function processImages(input) {
         if (!input.files || input.files.length === 0) return;
         
-        // 최대 20개 제한
         const maxFiles = 20;
         let files = Array.from(input.files);
         if (files.length > maxFiles) {
@@ -269,21 +220,17 @@
         
         let fullResultText = "";
         
-        // 1. 워커 생성 (한 번만 로딩해서 재사용)
         status.innerText = "OCR 엔진 초기화 중...";
         const worker = await Tesseract.createWorker('kor'); 
 
         try {
-            // 2. 파일 순차 처리
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
                 const fileNum = i + 1;
                 status.innerText = `[${fileNum}/${files.length}] 이미지 처리 중... (${file.name})`;
                 
-                // 이미지 로드
                 const img = await loadImage(file);
                 
-                // 기존 슬라이싱 로직 유지 (각 이미지가 길 수도 있으므로)
                 const sliceHeight = 1500; 
                 const totalSlices = Math.ceil(img.height / sliceHeight);
                 
@@ -303,15 +250,14 @@
                     const { data: { text } } = await worker.recognize(canvas);
                     fileText += text + "\n";
                     
-                    // 진행률 계산 (전체 파일 기준)
                     const currentFileProgress = (j + 1) / totalSlices;
                     const totalProgress = ((i + currentFileProgress) / files.length) * 100;
                     progressFill.style.width = `${totalProgress}%`;
                 }
                 
                 fullResultText += fileText + "\n";
-                resultArea.value = fullResultText; // 결과창 실시간 업데이트
-                resultArea.scrollTop = resultArea.scrollHeight; // 스크롤 하단으로 이동
+                resultArea.value = fullResultText;
+                resultArea.scrollTop = resultArea.scrollHeight;
             }
             
             status.innerText = `✅ 총 ${files.length}장 텍스트 추출 완료!`;
@@ -325,39 +271,32 @@
         }
     }
 
-    // ================= STEP 2: Assembler Logic (Specs HTML 제거 버전) =================
+    // ================= STEP 2: Assembler Logic =================
     async function generateListing() {
-        // 1. 입력값 가져오기
         const jsonStr = document.getElementById('jsonInput').value;
         const templateFile = document.getElementById('templateFileInput').files[0];
 
-        // 2. 유효성 검사
         if (!templateFile) { alert("먼저 '베이스 HTML 템플릿' 파일을 업로드해주세요!"); return; }
         if (!jsonStr) { alert("JSON 데이터를 붙여넣어 주세요!"); return; }
 
         try {
             const data = JSON.parse(jsonStr);
             
-            // --- 데이터 처리 ---
-
             // (1) 타이틀 채우기
             document.getElementById('titleA').value = data.titles.option_a || "";
             document.getElementById('titleB').value = data.titles.option_b || "";
 
-            // (2) 스펙 테이블 생성 (★ 화면 확인용으로만 남김)
+            // (2) 스펙 테이블 생성 (확인용)
             let tableRows = "";
             for (const key in data.item_specifics) {
                 if (data.item_specifics.hasOwnProperty(key)) {
                     const specKey = key || "Feature";
                     const specValue = data.item_specifics[key] || "N/A";
-                    tableRows += `<tr><th style="background:#f9f9f9; padding:8px; border:1px solid #ddd; width:30%;">${specKey}</th><td style="padding:8px; border:1px solid #ddd;">${specValue}</td></tr>`;
+                    tableRows += `<tr><th>${specKey}</th><td>${specValue}</td></tr>`;
                 }
             }
             document.getElementById('specsTable').innerHTML = tableRows;
             
-            // ★ [수정됨] HTML 삽입용 스펙 테이블 생성 코드 삭제함 (사장님 요청)
-            // const specsHtmlBlock = ... (삭제)
-
             // (3) 주의사항(Caution) 생성
             let cautionHtmlBlock = "";
             if (data.caution && data.caution.length > 0) {
@@ -372,15 +311,13 @@
             // (4) AI 마케팅 설명 (HTML) 가져오기
             const marketingHtml = data.description_html || "<p>상세 설명 데이터가 없습니다.</p>";
 
-            // (5) 최종 콘텐츠 덩어리 합체 (설명 + 주의사항) -> ★ 스펙 테이블 제외됨
+            // (5) 최종 콘텐츠 합체
             const fullContentBlock = marketingHtml + cautionHtmlBlock;
 
-            // --- 파일 읽기 및 조립 ---
+            // (6) 파일 읽기 및 조립
             const reader = new FileReader();
             reader.onload = function(e) {
                 let templateHtml = e.target.result;
-                
-                // 템플릿의 주석(표식)을 찾아서 교체
                 const marker = "<!-- REPLACE THIS SECTION WITH PRODUCT-SPECIFIC CONTENT -->";
 
                 if (templateHtml.includes(marker)) {
@@ -388,7 +325,6 @@
                     
                     document.getElementById('finalHtml').value = finalCode;
                     document.getElementById('outputArea').style.display = 'block';
-                    // alert("✅ 리스팅 생성 완료!"); (너무 자주 떠서 귀찮으시면 주석 처리)
                 } else {
                     alert("⚠️ 오류: 템플릿 파일에서 약속된 주석을 찾을 수 없습니다.\n\n'' \n\n이 문장이 HTML 파일 안에 들어있는지 확인해주세요.");
                 }
