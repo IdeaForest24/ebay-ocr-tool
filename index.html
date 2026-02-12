@@ -221,7 +221,7 @@
         let fullResultText = "";
         
         status.innerText = "OCR 엔진 초기화 중...";
-        const worker = await Tesseract.createWorker('kor'); 
+        const worker = await Tesseract.createWorker('kor+eng'); 
 
         try {
             for (let i = 0; i < files.length; i++) {
