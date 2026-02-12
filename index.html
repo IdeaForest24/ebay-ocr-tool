@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eBay Listing Master Tool (Ver 4.0 - Auto JSON)</title>
+    <title>eBay Listing Master Tool</title>
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <style>
         /* 기본 스타일 */
@@ -53,7 +53,62 @@
 </head>
 <body>
 
-<h1>eBay Listing Master Tool</h1>
+<h1>
+    eBay 리스팅 어드바이스 툴    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eBay Listing Master Tool</title>
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    <style>
+        /* 기본 스타일 */
+        body { font-family: 'Noto Sans KR', sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #f4f6f8; color: #333; }
+        h1 { text-align: center; color: #005fbc; margin-bottom: 30px; }
+        
+        /* 탭 메뉴 */
+        .tab-menu { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 15px; cursor: pointer; text-align: center; font-weight: bold; font-size: 16px; color: #666; background: #eee; border: none; border-radius: 8px 8px 0 0; margin-right: 2px; transition: 0.3s; }
+        .tab-btn:hover { background: #e0e0e0; }
+        .tab-btn.active { background: #005fbc; color: white; }
+        
+        .tab-content { display: none; background: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .tab-content.active { display: block; }
+
+        /* 입력/출력 요소 */
+        textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical; }
+        button { background-color: #005fbc; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 15px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        button:hover { background-color: #004c99; }
+        .copy-btn { background: #666; font-size: 12px; padding: 5px 10px; margin-left: 10px; }
+
+        /* Step 1 OCR 스타일 */
+        .upload-box { border: 2px dashed #ccc; padding: 30px; text-align: center; border-radius: 8px; margin-bottom: 20px; cursor: pointer; transition: 0.3s; background: #fafafa; }
+        .upload-box:hover { border-color: #005fbc; background-color: #f0f7ff; }
+        #ocrStatus { margin: 10px 0; font-weight: bold; color: #005fbc; text-align: center; min-height: 20px; }
+        .progress-bar { width: 100%; background-color: #e0e0e0; border-radius: 4px; overflow: hidden; height: 10px; margin-bottom: 20px; display: none; }
+        .progress-fill { height: 100%; background-color: #4caf50; width: 0%; transition: width 0.3s; }
+
+        /* Step 2 조립기 스타일 */
+        .assembler-container { display: flex; gap: 20px; }
+        .left-panel { flex: 1; }
+        .right-panel { flex: 1.5; border-left: 1px solid #eee; padding-left: 20px; }
+        .result-group { margin-bottom: 20px; border: 1px solid #eee; padding: 15px; border-radius: 8px; background: #fafafa; }
+        .result-label { font-weight: bold; display: block; margin-bottom: 5px; color: #555; }
+        
+        /* 테이블 스타일 */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f0f7ff; width: 30%; }
+        
+        /* 파일 업로드 영역 스타일 */
+        .file-upload-area { background: #e8f4fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #b3d9ff; display: flex; align-items: center; justify-content: space-between; }
+        .file-upload-area h4 { margin: 0; color: #005fbc; display: flex; align-items: center; }
+        
+        @media (max-width: 768px) { .assembler-container { flex-direction: column; } .right-panel { border-left: none; padding-left: 0; border-top: 1px solid #eee; padding-top: 20px; } }
+    </style>
+</head>
+<body>
+
+<h1>
+    eBay Listing Assistant 
+    <span class="ver-badge">Ver 1.0</span>
+</h1>
 
 <div class="tab-menu">
     <button class="tab-btn active" onclick="openTab('step1')">Step 1. 텍스트 추출 (OCR)</button>
@@ -61,14 +116,14 @@
 </div>
 
 <div id="step1" class="tab-content active">
-    <h2 style="margin-top:0;">📷 이미지 텍스트 추출</h2>
+    <h2 style="margin-top:0;">📷 이미지 텍스트 추출 (다중 파일 지원)</h2>
     <div class="upload-box" onclick="document.getElementById('fileInput').click()">
-        <p>📁 <strong>제품 상세페이지 이미지</strong>를 업로드하세요</p>
-        <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="processImage(this)">
+        <p>📁 <strong>제품 이미지들(최대 20장)</strong>을 한 번에 업로드하세요</p>
+        <input type="file" id="fileInput" accept="image/*" multiple style="display: none;" onchange="processImages(this)">
     </div>
     <div id="ocrStatus">대기 중...</div>
     <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
-    <textarea id="resultText" style="height: 300px;" placeholder="추출된 텍스트가 여기에 나타납니다..."></textarea>
+    <textarea id="resultText" style="height: 300px;" placeholder="추출된 텍스트가 여기에 순차적으로 나타납니다..."></textarea>
     <div style="margin-top: 10px; text-align: right;"><button onclick="copyText('resultText')">📋 텍스트 복사</button></div>
 </div>
 
@@ -135,10 +190,28 @@
         document.execCommand("copy");
     }
 
-    // ================= STEP 1: OCR Logic (유지) =================
-    async function processImage(input) {
-        if (!input.files || !input.files[0]) return;
-        const file = input.files[0];
+// ================= STEP 1: OCR Logic (다중 이미지 지원 수정됨) =================
+    // 이미지 로드 헬퍼 함수
+    function loadImage(file) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            img.onload = () => resolve(img);
+            img.onerror = (e) => reject(e);
+        });
+    }
+
+    async function processImages(input) {
+        if (!input.files || input.files.length === 0) return;
+        
+        // 최대 20개 제한
+        const maxFiles = 20;
+        let files = Array.from(input.files);
+        if (files.length > maxFiles) {
+            alert(`이미지는 최대 ${maxFiles}장까지만 처리됩니다.\n선택하신 파일 중 앞쪽 ${maxFiles}장만 진행합니다.`);
+            files = files.slice(0, maxFiles);
+        }
+
         const status = document.getElementById('ocrStatus');
         const progressBar = document.getElementById('progressBar');
         const progressFill = document.getElementById('progressFill');
@@ -147,36 +220,63 @@
         resultArea.value = "";
         progressBar.style.display = 'block';
         progressFill.style.width = '0%';
-        status.innerText = "이미지 로딩 중...";
+        
+        let fullResultText = "";
+        
+        // 1. 워커 생성 (한 번만 로딩해서 재사용)
+        status.innerText = "OCR 엔진 초기화 중...";
+        const worker = await Tesseract.createWorker('kor'); 
 
-        const img = new Image();
-        img.src = URL.createObjectURL(file);
-        img.onload = async function() {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const sliceHeight = 1500; 
-            const totalSlices = Math.ceil(img.height / sliceHeight);
-            let fullText = "";
+        try {
+            // 2. 파일 순차 처리
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const fileNum = i + 1;
+                status.innerText = `[${fileNum}/${files.length}] 이미지 처리 중... (${file.name})`;
+                
+                // 이미지 로드
+                const img = await loadImage(file);
+                
+                // 기존 슬라이싱 로직 유지 (각 이미지가 길 수도 있으므로)
+                const sliceHeight = 1500; 
+                const totalSlices = Math.ceil(img.height / sliceHeight);
+                
+                let fileText = `\n=== [Image ${fileNum}: ${file.name}] ===\n`;
 
-            status.innerText = `총 ${totalSlices}개 구간 분석 시작...`;
-            const worker = await Tesseract.createWorker('kor'); 
-
-            for (let i = 0; i < totalSlices; i++) {
-                const y = i * sliceHeight;
-                const h = Math.min(sliceHeight, img.height - y);
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
                 canvas.width = img.width;
-                canvas.height = h;
-                ctx.drawImage(img, 0, y, img.width, h, 0, 0, img.width, h);
-                const { data: { text } } = await worker.recognize(canvas);
-                fullText += `--- [Section ${i + 1}] ---\n${text}\n\n`;
-                const progress = ((i + 1) / totalSlices) * 100;
-                progressFill.style.width = `${progress}%`;
-                resultArea.value = fullText;
+
+                for (let j = 0; j < totalSlices; j++) {
+                    const y = j * sliceHeight;
+                    const h = Math.min(sliceHeight, img.height - y);
+                    
+                    canvas.height = h;
+                    ctx.drawImage(img, 0, y, img.width, h, 0, 0, img.width, h);
+                    
+                    const { data: { text } } = await worker.recognize(canvas);
+                    fileText += text + "\n";
+                    
+                    // 진행률 계산 (전체 파일 기준)
+                    const currentFileProgress = (j + 1) / totalSlices;
+                    const totalProgress = ((i + currentFileProgress) / files.length) * 100;
+                    progressFill.style.width = `${totalProgress}%`;
+                }
+                
+                fullResultText += fileText + "\n";
+                resultArea.value = fullResultText; // 결과창 실시간 업데이트
+                resultArea.scrollTop = resultArea.scrollHeight; // 스크롤 하단으로 이동
             }
+            
+            status.innerText = `✅ 총 ${files.length}장 텍스트 추출 완료!`;
+            
+        } catch (e) {
+            console.error(e);
+            status.innerText = "❌ 오류 발생: " + e.message;
+            alert("처리 중 오류가 발생했습니다. 콘솔을 확인해주세요.");
+        } finally {
             await worker.terminate();
-            status.innerText = "✅ 텍스트 추출 완료!";
-            progressBar.style.display = 'none';
-        };
+        }
     }
 
     // ================= STEP 2: Assembler Logic (Specs HTML 제거 버전) =================
