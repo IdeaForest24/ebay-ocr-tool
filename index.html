@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>eBay 리스팅용 텍스트 추출기 (Web Ver.)</title>
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background-color: #f4f6f8; }
+        h1 { color: #333; text-align: center; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        
+        .upload-box { border: 2px dashed #ccc; padding: 30px; text-align: center; border-radius: 8px; margin-bottom: 20px; cursor: pointer; transition: 0.3s; }
+        .upload-box:hover { border-color: #005fbc; background-color: #f0f7ff; }
+        
+        textarea { width: 100%; height: 300px; padding: 10px; border: 1px solid #ddd; border-radius: 8px; resize: vertical; font-size: 14px; line-height: 1.6; }
+        
+        button { background-color: #005fbc; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-size: 16px; cursor: pointer; width: 100%; margin-top: 10px; }
+        button:hover { background-color: #004c99; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+
+        #status { margin: 15px 0; font-weight: bold; color: #005fbc; text-align: center; min-height: 24px; }
+        .progress-bar { width: 100%; background-color: #e0e0e0; border-radius: 4px; overflow: hidden; height: 10px; margin-bottom: 20px; display: none; }
+        .progress-fill { height: 100%; background-color: #4caf50; width: 0%; transition: width 0.3s; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📄 상세페이지 텍스트 추출기</h1>
+    <p style="text-align: center; color: #666; margin-bottom: 20px;">
+        긴 이미지를 넣으면 자동으로 잘라서 텍스트만 뽑아줍니다.<br>
+        (결과를 복사해서 리스팅 Gems에 붙여넣으세요!)
+    </p>
+
+    <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+        <p>📷 여기를 클릭해서 <strong>긴 상세페이지 이미지</strong>를 업로드하세요</p>
+        <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="processImage(this)">
+    </div>
+
+    <div id="status">대기 중...</div>
+    <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+
+    <textarea id="resultText" placeholder="추출된 텍스트가 여기에 나타납니다..."></textarea>
+    <button onclick="copyText()">📋 텍스트 복사하기</button>
+</div>
+
+<script>
+    async function processImage(input) {
+        if (!input.files || !input.files[0]) return;
+        
+        const file = input.files[0];
+        const status = document.getElementById('status');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const resultArea = document.getElementById('resultText');
+        
+        // 초기화
+        resultArea.value = "";
+        progressBar.style.display = 'block';
+        progressFill.style.width = '0%';
+        status.innerText = "이미지 로딩 중...";
+
+        // 이미지 로드
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        
+        img.onload = async function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const sliceHeight = 1500; // 자를 높이 (픽셀)
+            const totalSlices = Math.ceil(img.height / sliceHeight);
+            let fullText = "";
+
+            status.innerText = `총 ${totalSlices}개 구간으로 나누어 분석을 시작합니다...`;
+
+            // Tesseract 워커 생성
+            const worker = await Tesseract.createWorker('kor'); // 한국어 언어팩 로드
+
+            for (let i = 0; i < totalSlices; i++) {
+                // 캔버스에 조각 그리기
+                const y = i * sliceHeight;
+                const h = Math.min(sliceHeight, img.height - y);
+                
+                canvas.width = img.width;
+                canvas.height = h;
+                ctx.drawImage(img, 0, y, img.width, h, 0, 0, img.width, h);
+
+                // OCR 수행
+                status.innerText = `[${i + 1}/${totalSlices}] 분석 중... (잠시만 기다려주세요)`;
+                const { data: { text } } = await worker.recognize(canvas);
+                
+                fullText += `--- [Section ${i + 1}] ---\n${text}\n\n`;
+                
+                // 진행률 업데이트
+                const progress = ((i + 1) / totalSlices) * 100;
+                progressFill.style.width = `${progress}%`;
+                
+                // 중간 결과 보여주기
+                resultArea.value = fullText;
+                resultArea.scrollTop = resultArea.scrollHeight;
+            }
+
+            await worker.terminate();
+            status.innerText = "✅ 모든 텍스트 추출 완료!";
+            progressBar.style.display = 'none';
+        };
+    }
+
+    function copyText() {
+        const copyText = document.getElementById("resultText");
+        copyText.select();
+        document.execCommand("copy");
+        alert("텍스트가 복사되었습니다! Gems에 붙여넣으세요.");
+    }
+</script>
+
+</body>
+</html>
