@@ -3,85 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eBay 리스팅 조립기 (JSON to HTML)</title>
+    <title>eBay Listing Master Tool</title>
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
     <style>
         body { font-family: 'Noto Sans KR', sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #f4f6f8; color: #333; }
-        h1, h2 { color: #005fbc; }
-        .container { display: flex; gap: 20px; }
-        .left-panel { flex: 1; }
-        .right-panel { flex: 1.5; }
+        h1 { text-align: center; color: #005fbc; margin-bottom: 30px; }
         
-        .box { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 20px; }
+        /* 탭 스타일 */
+        .tab-menu { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 15px; cursor: pointer; text-align: center; font-weight: bold; font-size: 16px; color: #666; background: #eee; border: none; border-radius: 8px 8px 0 0; margin-right: 2px; transition: 0.3s; }
+        .tab-btn:hover { background: #e0e0e0; }
+        .tab-btn.active { background: #005fbc; color: white; }
         
-        textarea { width: 100%; height: 300px; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 13px; }
-        
-        button { background-color: #005fbc; color: white; border: none; padding: 12px 20px; border-radius: 6px; font-size: 16px; cursor: pointer; width: 100%; font-weight: bold; }
+        /* 컨텐츠 영역 */
+        .tab-content { display: none; background: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .tab-content.active { display: block; }
+
+        /* 공통 스타일 */
+        textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical; }
+        button { background-color: #005fbc; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 15px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         button:hover { background-color: #004c99; }
-        
+        .copy-btn { background: #666; font-size: 12px; padding: 5px 10px; margin-left: 10px; }
+
+        /* Step 1: OCR 스타일 */
+        .upload-box { border: 2px dashed #ccc; padding: 30px; text-align: center; border-radius: 8px; margin-bottom: 20px; cursor: pointer; transition: 0.3s; background: #fafafa; }
+        .upload-box:hover { border-color: #005fbc; background-color: #f0f7ff; }
+        #ocrStatus { margin: 10px 0; font-weight: bold; color: #005fbc; text-align: center; min-height: 20px; }
+        .progress-bar { width: 100%; background-color: #e0e0e0; border-radius: 4px; overflow: hidden; height: 10px; margin-bottom: 20px; display: none; }
+        .progress-fill { height: 100%; background-color: #4caf50; width: 0%; transition: width 0.3s; }
+
+        /* Step 2: 조립기 스타일 */
+        .assembler-container { display: flex; gap: 20px; }
+        .left-panel { flex: 1; }
+        .right-panel { flex: 1.5; border-left: 1px solid #eee; padding-left: 20px; }
         .result-group { margin-bottom: 20px; border: 1px solid #eee; padding: 15px; border-radius: 8px; background: #fafafa; }
         .result-label { font-weight: bold; display: block; margin-bottom: 5px; color: #555; }
-        .copy-btn { background: #666; font-size: 12px; padding: 5px 10px; width: auto; display: inline-block; margin-left: 10px; }
-        
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
         th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
         th { background-color: #f0f7ff; width: 30%; }
+        
+        @media (max-width: 768px) { .assembler-container { flex-direction: column; } .right-panel { border-left: none; padding-left: 0; border-top: 1px solid #eee; padding-top: 20px; } }
     </style>
 </head>
 <body>
 
-<h1>🛠️ eBay 리스팅 조립기</h1>
-<p>Gems가 준 <strong>JSON 데이터</strong>를 붙여넣으면, 타이틀과 HTML 코드를 조립해줍니다.</p>
+<h1>eBay Listing Master Tool</h1>
 
-<div class="container">
-    <div class="left-panel">
-        <div class="box">
-            <h3>👇 JSON 데이터 붙여넣기</h3>
-            <textarea id="jsonInput" placeholder='{"titles": {...}, "item_specifics": {...}}'></textarea>
-            <br><br>
-            <button onclick="generateListing()">🚀 리스팅 생성하기</button>
-        </div>
-        
-        <div class="box">
-            <h4>💡 사용 팁</h4>
-            <ul style="padding-left: 20px; line-height: 1.6; font-size: 14px; color: #666;">
-                <li>Gems 프롬프트에 "JSON으로만 줘"라고 하세요.</li>
-                <li>오른쪽 결과에서 [복사] 버튼을 누르면 클립보드에 복사됩니다.</li>
-                <li>생성된 HTML 코드는 eBay Description 탭에 그대로 붙여넣으세요.</li>
-            </ul>
-        </div>
+<div class="tab-menu">
+    <button class="tab-btn active" onclick="openTab('step1')">Step 1. 이미지 텍스트 추출 (OCR)</button>
+    <button class="tab-btn" onclick="openTab('step2')">Step 2. 리스팅 HTML 생성 (JSON)</button>
+</div>
+
+<div id="step1" class="tab-content active">
+    <h2 style="margin-top:0;">📷 이미지에서 텍스트 뽑기</h2>
+    <p style="color:#666; margin-bottom:20px;">긴 상세페이지 이미지를 넣으면 자동으로 잘라서 텍스트만 추출해줍니다. 이 텍스트를 복사해서 <strong>Gems</strong>에게 주세요.</p>
+
+    <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+        <p>📁 클릭해서 <strong>상세페이지 이미지</strong> 업로드 (JPG, PNG)</p>
+        <input type="file" id="fileInput" accept="image/*" style="display: none;" onchange="processImage(this)">
     </div>
 
-    <div class="right-panel">
-        <div class="box" id="outputArea" style="display:none;">
-            <h2>✅ 생성 결과</h2>
+    <div id="ocrStatus">대기 중...</div>
+    <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
 
-            <div class="result-group">
-                <span class="result-label">Title Option A (Brand) <button class="copy-btn" onclick="copyToClip('titleA')">복사</button></span>
-                <input type="text" id="titleA" style="width:100%; padding:8px;" readonly>
-            </div>
-            <div class="result-group">
-                <span class="result-label">Title Option B (Keyword) <button class="copy-btn" onclick="copyToClip('titleB')">복사</button></span>
-                <input type="text" id="titleB" style="width:100%; padding:8px;" readonly>
-            </div>
+    <textarea id="resultText" style="height: 300px;" placeholder="추출된 텍스트가 여기에 나타납니다..."></textarea>
+    <div style="margin-top: 10px; text-align: right;">
+        <button onclick="copyText('resultText')">📋 텍스트 전체 복사</button>
+    </div>
+</div>
 
-            <div class="result-group">
-                <span class="result-label">Item Specifics (참고용)</span>
-                <table id="specsTable">
-                    </table>
-            </div>
+<div id="step2" class="tab-content">
+    <h2 style="margin-top:0;">🛠️ JSON으로 HTML 조립하기</h2>
+    <p style="color:#666; margin-bottom:20px;">Gems가 준 <strong>JSON 데이터</strong>를 붙여넣으면, 타이틀과 HTML 코드를 완성해줍니다.</p>
 
-            <div class="result-group">
-                <span class="result-label">🔥 Final HTML Code <button class="copy-btn" onclick="copyToClip('finalHtml')">코드 복사</button></span>
-                <textarea id="finalHtml" style="height: 200px;"></textarea>
+    <div class="assembler-container">
+        <div class="left-panel">
+            <h4>👇 JSON 데이터 붙여넣기</h4>
+            <textarea id="jsonInput" style="height: 400px;" placeholder='{"titles": {...}, "item_specifics": {...}}'></textarea>
+            <br><br>
+            <button onclick="generateListing()" style="width:100%;">🚀 리스팅 생성하기</button>
+        </div>
+
+        <div class="right-panel">
+            <div id="outputArea" style="display:none;">
+                <div class="result-group">
+                    <span class="result-label">Title Option A <button class="copy-btn" onclick="copyText('titleA')">복사</button></span>
+                    <input type="text" id="titleA" style="width:100%; padding:8px;" readonly>
+                </div>
+                <div class="result-group">
+                    <span class="result-label">Title Option B <button class="copy-btn" onclick="copyText('titleB')">복사</button></span>
+                    <input type="text" id="titleB" style="width:100%; padding:8px;" readonly>
+                </div>
+
+                <div class="result-group">
+                    <span class="result-label">Item Specifics (확인용)</span>
+                    <table id="specsTable"></table>
+                </div>
+
+                <div class="result-group">
+                    <span class="result-label">🔥 Final HTML Code <button class="copy-btn" onclick="copyText('finalHtml')">코드 복사</button></span>
+                    <textarea id="finalHtml" style="height: 200px;"></textarea>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
 <script>
+    // 탭 전환 기능
+    function openTab(tabId) {
+        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+    }
+
+    // 텍스트 복사 기능
+    function copyText(elementId) {
+        const copyText = document.getElementById(elementId);
+        copyText.select();
+        document.execCommand("copy");
+        // alert("복사되었습니다!"); 
+    }
+
     // ==========================================
-    // [설정] 사장님의 HTML 템플릿 (Ver 2.0)
+    // [기능 1] OCR 이미지 처리 (Tesseract.js)
     // ==========================================
+    async function processImage(input) {
+        if (!input.files || !input.files[0]) return;
+        
+        const file = input.files[0];
+        const status = document.getElementById('ocrStatus');
+        const progressBar = document.getElementById('progressBar');
+        const progressFill = document.getElementById('progressFill');
+        const resultArea = document.getElementById('resultText');
+        
+        resultArea.value = "";
+        progressBar.style.display = 'block';
+        progressFill.style.width = '0%';
+        status.innerText = "이미지 로딩 중...";
+
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        
+        img.onload = async function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            const sliceHeight = 1500; 
+            const totalSlices = Math.ceil(img.height / sliceHeight);
+            let fullText = "";
+
+            status.innerText = `총 ${totalSlices}개 구간 분석 시작...`;
+            const worker = await Tesseract.createWorker('kor'); 
+
+            for (let i = 0; i < totalSlices; i++) {
+                const y = i * sliceHeight;
+                const h = Math.min(sliceHeight, img.height - y);
+                canvas.width = img.width;
+                canvas.height = h;
+                ctx.drawImage(img, 0, y, img.width, h, 0, 0, img.width, h);
+
+                status.innerText = `[${i + 1}/${totalSlices}] 텍스트 읽는 중...`;
+                const { data: { text } } = await worker.recognize(canvas);
+                
+                fullText += `--- [Section ${i + 1}] ---\n${text}\n\n`;
+                const progress = ((i + 1) / totalSlices) * 100;
+                progressFill.style.width = `${progress}%`;
+                resultArea.value = fullText;
+                resultArea.scrollTop = resultArea.scrollHeight;
+            }
+
+            await worker.terminate();
+            status.innerText = "✅ 텍스트 추출 완료! (복사해서 Gems에 입력하세요)";
+            progressBar.style.display = 'none';
+        };
+    }
+
+    // ==========================================
+    // [기능 2] 리스팅 생성기 (JSON to HTML)
+    // ==========================================
+    
+    // HTML 템플릿 (Ver 2.0 - 사장님 버전)
     const htmlTemplateBefore = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -138,7 +241,6 @@
                 <h3>📋 Item Details</h3>`;
 
     const htmlTemplateAfter = `            </div>
-            
             <div class="tab-pane" data-tab="shipping">
                 <h3>🚚 International Shipping</h3>
                 <div class="shipping-info">
@@ -148,7 +250,6 @@
                 </div>
                 <p>Tracking number provided. We ship worldwide.</p>
             </div>
-            
             <div class="tab-pane" data-tab="customs">
                 <h3>🛃 Customs & Duties</h3>
                 <div class="shipping-info">
@@ -156,12 +257,10 @@
                      <h4>🌍 Non-US Buyers: Import duties/taxes are buyer's responsibility.</h4>
                 </div>
             </div>
-            
             <div class="tab-pane" data-tab="returns">
                 <h3>↩️ Refunds & Returns</h3>
                 <p>• 30-day return period. Items must be in original condition.</p>
             </div>
-            
             <div class="tab-pane" data-tab="about">
                 <h3>🏢 About Us</h3>
                 <p>Trusted Korean seller. Authentic products only. Fast shipping.</p>
@@ -178,33 +277,26 @@
         try {
             const data = JSON.parse(inputStr);
             
-            // 1. 타이틀 채우기
             document.getElementById('titleA').value = data.titles.option_a;
             document.getElementById('titleB').value = data.titles.option_b;
 
-            // 2. 스펙 테이블 (화면 표시용)
             const specsTable = document.getElementById('specsTable');
             let tableHtml = "";
-            let specsListHtml = "<ul>"; // HTML 코드 삽입용 리스트
+            let specsListHtml = "<ul>";
 
             for (const [key, value] of Object.entries(data.item_specifics)) {
-                // 화면용 테이블
                 tableHtml += `<tr><th>${key}</th><td>${value}</td></tr>`;
-                // HTML 코드용 리스트
                 specsListHtml += `<li><strong>${key}:</strong> ${value}</li>`;
             }
             specsListHtml += "</ul>";
             specsTable.innerHTML = tableHtml;
 
-            // 3. 상세 설명 (HTML Body) 조립
             let descHtml = "";
-            
-            // 3-1. 메인 타이틀 (Product Name)
             const productName = data.item_specifics["Product Name"] || "Premium Korean Product";
+            
             descHtml += `<div style="margin-bottom: 30px;">
                 <h2 style="color: #333; font-size: 22px; margin-bottom: 15px;">${productName}</h2>`;
             
-            // 3-2. 핵심 포인트 (Description Points)
             if (data.description_points) {
                 descHtml += `<div class="shipping-info" style="background: #fff8f8; border-color: #ffcccc;">
                     <h4 style="color: #d9534f; margin-top:0;">🔥 Key Benefits</h4>
@@ -215,11 +307,9 @@
                 descHtml += `</ul></div>`;
             }
 
-            // 3-3. 스펙 리스트 삽입
             descHtml += `<h4>⚙️ Specifications</h4>`;
             descHtml += specsListHtml;
 
-            // 3-4. 주의사항 (Caution)
             if (data.caution) {
                 descHtml += `<h4>⚠️ Caution</h4><ul style="color: #d9534f;">`;
                 data.caution.forEach(item => {
@@ -227,25 +317,15 @@
                 });
                 descHtml += `</ul>`;
             }
-            descHtml += `</div>`; // 닫는 div
+            descHtml += `</div>`;
 
-            // 4. 최종 HTML 합치기
             const finalCode = htmlTemplateBefore + descHtml + htmlTemplateAfter;
             document.getElementById('finalHtml').value = finalCode;
-
-            // 결과창 보이기
             document.getElementById('outputArea').style.display = 'block';
 
         } catch (e) {
-            alert("JSON 형식이 잘못되었습니다. Gems가 준 코드를 그대로 복사했는지 확인해주세요!\n\n오류내용: " + e.message);
+            alert("JSON 형식이 잘못되었습니다.\n오류내용: " + e.message);
         }
-    }
-
-    function copyToClip(elementId) {
-        const copyText = document.getElementById(elementId);
-        copyText.select();
-        document.execCommand("copy");
-        // alert("복사완료!"); // 너무 자주 뜨면 귀찮으니 주석 처리
     }
 </script>
 
