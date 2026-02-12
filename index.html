@@ -235,7 +235,7 @@
                 let templateHtml = e.target.result;
                 
                 // 템플릿의 주석(표식)을 찾아서 교체
-                const marker = "";
+                const marker = "-- REPLACE THIS SECTION WITH PRODUCT-SPECIFIC CONTENT -->";
 
                 if (templateHtml.includes(marker)) {
                     const finalCode = templateHtml.replace(marker, fullContentBlock);
