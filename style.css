@@ -1,0 +1,321 @@
+/* 기본 스타일 */
+body { 
+    font-family: 'Noto Sans KR', sans-serif; 
+    max-width: 1200px; 
+    margin: 0 auto; 
+    padding: 20px; 
+    background-color: #f4f6f8; 
+    color: #333; 
+}
+
+/* 헤더 스타일 */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+.header h1 {
+    margin: 0;
+    color: #005fbc;
+}
+#settingsBtn {
+    font-size: 24px; /* 아이콘 크기 */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0; /* 버튼 기본 패딩 제거 */
+}
+
+/* 스텝별 섹션 스타일 */
+.step-section {
+    padding: 20px; /* 패딩 20px로 통일 */
+    margin-bottom: 25px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 1px solid #ddd;
+}
+.step-section h2 {
+    margin-top: 0;
+    margin-bottom: 15px; /* 마진 축소 */
+    padding-bottom: 10px;
+    border-bottom: 2px solid #eee;
+    color: #005fbc;
+}
+
+/* Step 1 타이틀 행: h2와 업로드 버튼을 같은 행에 배치 */
+.step1-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #eee;
+}
+.step1-title-row h2 {
+    margin: 0;
+    padding: 0;
+    border-bottom: none;
+}
+#step1 { background-color: #e3f2fd; } /* Light Blue */
+#step2 { background-color: #e8f5e9; } /* Light Green */
+#step3 { background-color: #fffde7; } /* Light Yellow */
+
+/* 입력/출력 요소 */
+input[type="text"], input[type="password"] { /* password type 추가 */
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    margin-bottom: 0; /* input-group 내부에서는 마진 제거 */
+}
+textarea { 
+    width: 100%; 
+    padding: 10px; 
+    border: 1px solid #ddd; 
+    border-radius: 4px; 
+    font-family: monospace; 
+    font-size: 13px; 
+    resize: vertical; 
+    box-sizing: border-box; 
+    margin-bottom: 10px; /* 일관된 마진 */
+}
+button { 
+    background-color: #005fbc; 
+    color: white; 
+    border: none; 
+    padding: 10px 20px; 
+    border-radius: 6px; 
+    font-size: 15px; 
+    cursor: pointer; 
+    font-weight: bold; 
+    transition: 0.2s; 
+}
+button:hover { background-color: #004c99; }
+button:disabled { /* 비활성화 버튼 스타일 */
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+.copy-btn { background: #666; font-size: 12px; padding: 5px 10px; margin-left: 10px; }
+
+/* AI 생성 버튼 스타일 */
+#aiGenerateBtn {
+    background-color: #8e44ad; /* Purple */
+}
+#aiGenerateBtn:hover {
+    background-color: #702f8a;
+}
+#aiGenerateBtn:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Step 1 UI 재구성 */
+.step1-container {
+    display: flex;
+    gap: 20px;
+    align-items: stretch; /* 높이 맞춤 */
+    min-height: 350px; /* Step 1 전체의 최소 높이 확보 */
+}
+.step1-left {
+    flex: 1.5; /* 가로 길이를 대폭 줄임 */
+    display: flex;
+    flex-direction: column;
+}
+.step1-right {
+    flex: 2.5; /* 가로 길이를 더 넓게 확장 */
+    display: flex;
+    flex-direction: column;
+}
+
+#uploadBtn {
+    width: fit-content; /* 너비를 내용에 맞게 */
+    padding: 8px 25px; /* 패딩 조정 */
+    margin-bottom: 0; /* 마진 제거 */
+}
+.data-table-input-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+.data-table-input-row input[type="text"] {
+    flex: 1;
+    width: auto;
+    margin-bottom: 0;
+    color: #555;
+    cursor: default;
+}
+.data-table-input-row #dataTableBtn {
+    flex-shrink: 0;
+    padding: 10px 16px;
+}
+#resetBtn {
+    width: 100%;
+    margin-top: 20px;
+    background-color: #c0392b;
+}
+#resetBtn:hover {
+    background-color: #a93226;
+}
+
+.progress-bar { width: 100%; background-color: #e0e0e0; border-radius: 4px; overflow: hidden; height: 10px; display: none; }
+.progress-fill { height: 100%; background-color: #4caf50; width: 0%; transition: width 0.3s; }
+.input-group { 
+    display: flex; 
+    flex-direction: column;
+    gap: 40px; /* 간격을 조금 더 넓힘 */
+}
+.input-group > div { 
+    display: flex;
+    flex-direction: column;
+}
+.input-group label { margin-bottom: 5px; }
+
+#resultText {
+    height: 100%; /* 부모 높이에 맞춤 */
+    flex-grow: 1; /* 남은 공간 모두 차지 */
+    min-height: 250px; /* Step 2와 비슷한 세로 길이 확보 */
+    resize: none; /* 크기 조절 비활성화 */
+}
+
+#jsonInput {
+    height: 250px;
+}
+
+/* Step 3 리스팅 결과 스타일 */
+.result-group { margin-bottom: 15px; border: 1px solid #eee; padding: 10px; border-radius: 8px; background: #fafafa; } /* 패딩, 마진 축소 */
+.result-label { font-weight: bold; display: block; margin-bottom: 5px; color: #555; }
+
+/* 테이블 스타일 */
+table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+th { background-color: #f0f7ff; width: 30%; }
+
+/* 모달 및 오버레이 스타일 */
+.modal-overlay {
+    display: none; /* 초기에는 숨김 */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+.modal-content {
+    background: white;
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    position: relative;
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+.modal-header h2 { margin: 0; }
+.close-modal {
+    font-size: 28px;
+    font-weight: bold;
+    color: #aaa;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+.modal-body label {
+    display: block;
+    font-weight: bold;
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+.modal-body textarea {
+    height: 150px;
+    font-size: 12px;
+}
+.modal-footer {
+    text-align: right;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+#saveSettingsBtn {
+    background-color: #28a745;
+}
+#saveSettingsBtn:hover {
+    background-color: #218838;
+}
+
+/* 포스트잇 메모 */
+.sticky-notes-container {
+    display: none; /* 기본 숨김, 넓은 화면에서만 표시 */
+    position: fixed;
+    right: calc((100vw - 1200px) / 2 - 235px); /* 콘텐츠 우측 끝에서 30px 간격 */
+    top: 120px;
+    width: 200px;
+    flex-direction: column;
+    gap: 18px;
+    z-index: 50;
+}
+.sticky-note {
+    background-color: #fef08a;
+    border-radius: 4px;
+    padding: 10px;
+    box-shadow: 3px 3px 8px rgba(0,0,0,0.18);
+}
+.sticky-note-header {
+    font-size: 13px;
+    font-weight: bold;
+    color: #666;
+    margin-bottom: 7px;
+    border-bottom: 1px solid #e2c800;
+    padding-bottom: 5px;
+}
+.sticky-note textarea {
+    width: 100%;
+    height: 150px;
+    background: transparent;
+    border: none;
+    resize: none;
+    font-family: 'Noto Sans KR', sans-serif;
+    font-size: 14px;
+    color: #333;
+    box-sizing: border-box;
+    margin-bottom: 0;
+    padding: 2px;
+    outline: none;
+    line-height: 1.5;
+}
+@media (min-width: 1640px) {
+    .sticky-notes-container {
+        display: flex;
+    }
+}
+
+/* 하단 푸터 (버전 정보) */
+.footer-info {
+    text-align: right;
+    margin-top: 50px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+    color: #888;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+@media (max-width: 768px) { 
+    .step1-container { flex-direction: column; } /* Step 1 세로 스택 */
+    .input-group { flex-direction: column; gap: 0; }
+    .step1-left { flex: 1; min-width: unset; } /* 모바일에서 고정 너비 해제 */
+}

@@ -3,339 +3,133 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>eBay Listing Assistant</title>
+    <title>eBay Listing Assistant v2.0</title>
     <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
-    <style>
-        /* 기본 스타일 */
-        body { font-family: 'Noto Sans KR', sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; background-color: #f4f6f8; color: #333; }
-        h1 { text-align: center; color: #005fbc; margin-bottom: 30px; }
-        
-        /* 탭 메뉴 */
-        .tab-menu { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
-        .tab-btn { flex: 1; padding: 15px; cursor: pointer; text-align: center; font-weight: bold; font-size: 16px; color: #666; background: #eee; border: none; border-radius: 8px 8px 0 0; margin-right: 2px; transition: 0.3s; }
-        .tab-btn:hover { background: #e0e0e0; }
-        .tab-btn.active { background: #005fbc; color: white; }
-        
-        .tab-content { display: none; background: white; padding: 30px; border-radius: 0 0 8px 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .tab-content.active { display: block; }
-
-        /* 입력/출력 요소 */
-        textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; font-size: 13px; resize: vertical; box-sizing: border-box; }
-        button { background-color: #005fbc; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-size: 15px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        button:hover { background-color: #004c99; }
-        .copy-btn { background: #666; font-size: 12px; padding: 5px 10px; margin-left: 10px; }
-
-        /* Step 1 OCR 스타일 */
-        .upload-box { border: 2px dashed #ccc; padding: 30px; text-align: center; border-radius: 8px; margin-bottom: 20px; cursor: pointer; transition: 0.3s; background: #fafafa; }
-        .upload-box:hover { border-color: #005fbc; background-color: #f0f7ff; }
-        #ocrStatus { margin: 10px 0; font-weight: bold; color: #005fbc; text-align: center; min-height: 20px; }
-        .progress-bar { width: 100%; background-color: #e0e0e0; border-radius: 4px; overflow: hidden; height: 10px; margin-bottom: 20px; display: none; }
-        .progress-fill { height: 100%; background-color: #4caf50; width: 0%; transition: width 0.3s; }
-
-        /* Step 2 조립기 스타일 */
-        .assembler-container { display: flex; gap: 20px; }
-        .left-panel { flex: 1; }
-        .right-panel { flex: 1.5; border-left: 1px solid #eee; padding-left: 20px; }
-        .result-group { margin-bottom: 20px; border: 1px solid #eee; padding: 15px; border-radius: 8px; background: #fafafa; }
-        .result-label { font-weight: bold; display: block; margin-bottom: 5px; color: #555; }
-        
-        /* 테이블 스타일 */
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f0f7ff; width: 30%; }
-        
-        /* 파일 업로드 영역 스타일 */
-        .file-upload-area { background: #e8f4fd; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #b3d9ff; display: flex; align-items: center; justify-content: space-between; }
-        .file-upload-area h4 { margin: 0; color: #005fbc; display: flex; align-items: center; }
-
-        /* 하단 푸터 (버전 정보) */
-        .footer-info {
-            text-align: right;
-            margin-top: 50px;
-            padding-top: 10px;
-            border-top: 1px solid #eee;
-            color: #888;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        
-        @media (max-width: 768px) { .assembler-container { flex-direction: column; } .right-panel { border-left: none; padding-left: 0; border-top: 1px solid #eee; padding-top: 20px; } }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<h1>eBay Listing Assistant</h1>
-
-<div class="tab-menu">
-    <button class="tab-btn active" onclick="openTab('step1')">Step 1. 텍스트 추출 (OCR)</button>
-    <button class="tab-btn" onclick="openTab('step2')">Step 2. 리스팅 생성 (JSON)</button>
+<div class="header">
+    <h1>eBay Listing Assistant</h1>
+    <button id="settingsBtn" title="설정">⚙️</button>
 </div>
 
-<div id="step1" class="tab-content active">
-    <h2 style="margin-top:0;">📷 이미지 텍스트 추출 (다중 파일 지원)</h2>
-    
-    <div class="upload-box" onclick="document.getElementById('fileInput').click()">
-        <p>📁 <strong>제품 이미지들(최대 20장)</strong>을 한 번에 업로드하세요</p>
+<!-- Step 1: 텍스트 추출 -->
+<div id="step1" class="step-section">
+    <div class="step1-title-row">
+        <h2>Step 1. 텍스트 추출</h2>
+    </div>
+    <div style="text-align: right; margin-bottom: 10px;">
+        <button id="uploadBtn" onclick="document.getElementById('fileInput').click()">📁 이미지 업로드</button>
         <input type="file" id="fileInput" accept="image/*" multiple style="display: none;" onchange="processImages(this)">
     </div>
-
-    <div style="margin-bottom: 5px; font-weight: bold; color: #555;">📝 키워드, 제품명</div>
-    <textarea id="userPrompt" style="height: 100px; margin-bottom: 20px; background-color: #fffde7; border: 1px solid #e6db74;" placeholder="키워드 / 제품명"></textarea>
-
-    <div id="ocrStatus">대기 중...</div>
-    <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
-    
-    <div style="margin-bottom: 5px; font-weight: bold; color: #555;">📄 추출된 텍스트</div>
-    <textarea id="resultText" style="height: 300px;" placeholder="이미지에서 추출된 텍스트가 여기에 순차적으로 나타납니다..."></textarea>
-    
-    <div style="margin-top: 10px; text-align: right;">
-        <button onclick="copyCombinedText()" style="background-color: #2e7d32;">📋 전체 복사</button>
-    </div>
-</div>
-
-<div id="step2" class="tab-content">
-    <h2 style="margin-top:0;">🛠️ 리스팅 데이터 조립</h2>
-    
-    <div class="file-upload-area">
-        <div>
-            <h4 style="margin-bottom: 5px;">📂 1. 베이스 HTML 템플릿 업로드</h4>
-            <span style="font-size: 12px; color: #666;">* 'REPLACE THIS SECTION...' 주석이 포함된 파일</span>
-        </div>
-        <input type="file" id="templateFileInput" accept=".html">
-    </div>
-
-    <div class="assembler-container">
-        <div class="left-panel">
-            <h4>👇 2. Gems가 준 JSON 붙여넣기</h4>
-            <textarea id="jsonInput" style="height: 400px;" placeholder='{
-  "titles": {...}, 
-  "item_specifics": {...},
-  "description_html": "...",
-  "caution": [...]
-}'></textarea>
-            <br><br>
-            <button onclick="generateListing()" style="width:100%;">🚀 리스팅 생성하기</button>
-        </div>
-
-        <div class="right-panel">
-            <div id="outputArea" style="display:none;">
-                <div class="result-group">
-                    <span class="result-label">Title Option A <button class="copy-btn" onclick="copyText('titleA')">복사</button></span>
-                    <input type="text" id="titleA" style="width:100%; padding:8px;" readonly>
+    <div class="step1-container">
+        <div class="step1-left">
+            <div class="input-group">
+                <div>
+                    <label for="keywordInput"><strong>📝 키워드</strong></label>
+                    <input type="text" id="keywordInput" placeholder="예: vintage, rare, for parts">
                 </div>
-                <div class="result-group">
-                    <span class="result-label">Title Option B <button class="copy-btn" onclick="copyText('titleB')">복사</button></span>
-                    <input type="text" id="titleB" style="width:100%; padding:8px;" readonly>
+                <div>
+                    <label for="productNameInput"><strong>🏷️ 제품명</strong></label>
+                    <input type="text" id="productNameInput" placeholder="예: Sony Walkman WM-F100II">
                 </div>
-                <div class="result-group">
-                    <span class="result-label">Item Specifics (Check Only)</span>
-                    <table id="specsTable"></table>
-                </div>
-                <div class="result-group">
-                    <span class="result-label">🔥 HTML Full Code <button class="copy-btn" onclick="copyText('finalHtml')">코드 복사</button></span>
-                    <textarea id="finalHtml" style="height: 300px; color: #005fbc; font-weight: bold;"></textarea>
+                <div>
+                    <label><strong>📊 데이터 테이블</strong></label>
+                    <div class="data-table-input-row">
+                        <input type="text" id="dataTableFileName" readonly placeholder="선택된 파일 없음">
+                        <button id="dataTableBtn" type="button" onclick="document.getElementById('dataTableInput').click()">업로드</button>
+                        <input type="file" id="dataTableInput" accept="image/*" style="display: none;" onchange="handleDataTableImage(this)">
+                    </div>
                 </div>
             </div>
+        </div>
+        <div class="step1-right">
+            <label for="resultText" style="display: block; margin-bottom: 5px;"><strong>📄 추출된 텍스트</strong></label>
+            <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progressFill"></div></div>
+            <textarea id="resultText" placeholder="이미지에서 추출된 텍스트가 여기에 순차적으로 나타납니다..."></textarea>
+            <div style="margin-top: 10px; text-align: right;">
+                <button id="aiGenerateBtn">🚀 시작</button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Step 2: JSON 생성 -->
+<div id="step2" class="step-section">
+    <h2>Step 2. JSON 생성</h2>
+    <label for="jsonInput" style="display: block; margin-bottom: 5px;"><strong>🤖 AI가 생성한 JSON 데이터</strong></label>
+    <textarea id="jsonInput" placeholder='AI가 생성한 JSON 결과가 여기에 표시됩니다. 또는 직접 붙여넣고 Step 3을 진행할 수 있습니다.' readonly></textarea>
+</div>
+
+<!-- Step 3: 리스팅 생성 -->
+<div id="step3" class="step-section">
+    <h2>Step 3. 리스팅 생성</h2>
+    <div id="outputArea">
+        <div class="result-group">
+            <span class="result-label">Title Option A <button class="copy-btn" onclick="copyText('titleA')">복사</button></span>
+            <input type="text" id="titleA" style="width:100%; padding:8px;" readonly>
+        </div>
+        <div class="result-group">
+            <span class="result-label">Title Option B <button class="copy-btn" onclick="copyText('titleB')">복사</button></span>
+            <input type="text" id="titleB" style="width:100%; padding:8px;" readonly>
+        </div>
+        <div class="result-group">
+            <span class="result-label">Item Specifics (Check Only)</span>
+            <table id="specsTable"></table>
+        </div>
+        <div class="result-group">
+            <span class="result-label">🔥 HTML Full Code <button class="copy-btn" onclick="copyText('finalHtml')">코드 복사</button></span>
+            <textarea id="finalHtml" style="height: 300px; color: #005fbc; font-weight: bold;"></textarea>
+        </div>
+    </div>
+    <button id="resetBtn" onclick="resetAll()">🔄 초기화</button>
+</div>
+
+<!-- 설정 모달 -->
+<div id="settingsModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>⚙️ 설정</h2>
+            <button class="close-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+            <label for="geminiApiKey">🔑 Google Gemini API Key</label>
+            <input type="password" id="geminiApiKey" placeholder="API 키를 입력하세요">
+
+            <label for="systemPromptInput">🤖 시스템 프롬프트 (System Prompt)</label>
+            <textarea id="systemPromptInput" placeholder="AI에게 내릴 기본 명령어를 입력하세요."></textarea>
+            
+            <label for="htmlTemplateInput">📜 베이스 HTML 템플릿</label>
+            <textarea id="htmlTemplateInput" placeholder="<!-- REPLACE THIS SECTION... --> 주석이 포함된 HTML 코드를 붙여넣으세요."></textarea>
+        </div>
+        <div class="modal-footer">
+            <button id="saveSettingsBtn">저장 후 닫기</button>
         </div>
     </div>
 </div>
 
 <div class="footer-info">
-    Ver. 1.1
+    Ver. 2.0 One-Page Flow
 </div>
 
-<script>
-    // 탭 전환 함수
-    function openTab(tabId) {
-        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-        event.currentTarget.classList.add('active');
-    }
+<!-- 포스트잇 메모 -->
+<div class="sticky-notes-container">
+    <div class="sticky-note">
+        <div class="sticky-note-header">📝 메모 1</div>
+        <textarea id="memo1" placeholder="메모를 입력하세요..." oninput="localStorage.setItem('memo1', this.value)"></textarea>
+    </div>
+    <div class="sticky-note">
+        <div class="sticky-note-header">📝 메모 2</div>
+        <textarea id="memo2" placeholder="메모를 입력하세요..." oninput="localStorage.setItem('memo2', this.value)"></textarea>
+    </div>
+</div>
 
-    // 텍스트 복사 함수 (단일 요소)
-    function copyText(elementId) {
-        const copyText = document.getElementById(elementId);
-        copyText.select();
-        document.execCommand("copy");
-    }
-
-    // [추가] 지시문 + OCR 결과 합쳐서 복사하기
-    function copyCombinedText() {
-        const prompt = document.getElementById('userPrompt').value;
-        const result = document.getElementById('resultText').value;
-
-        if (!result && !prompt) {
-            alert("복사할 내용이 없습니다.");
-            return;
-        }
-
-        const combinedText = prompt + "\n\n" + result;
-
-        const tempElem = document.createElement('textarea');
-        tempElem.value = combinedText;
-        document.body.appendChild(tempElem);
-        tempElem.select();
-        document.execCommand("copy");
-        document.body.removeChild(tempElem);
-
-        const btn = event.target;
-        const originalText = btn.innerText;
-        btn.innerText = "✅ 복사 완료!";
-        btn.style.backgroundColor = "#4caf50";
-        setTimeout(() => {
-            btn.innerText = originalText;
-            btn.style.backgroundColor = "#2e7d32";
-        }, 1500);
-    }
-
-    // ================= STEP 1: OCR Logic (다중 이미지 지원) =================
-    function loadImage(file) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            img.src = URL.createObjectURL(file);
-            img.onload = () => resolve(img);
-            img.onerror = (e) => reject(e);
-        });
-    }
-
-    async function processImages(input) {
-        if (!input.files || input.files.length === 0) return;
-        
-        const maxFiles = 20;
-        let files = Array.from(input.files);
-        if (files.length > maxFiles) {
-            alert(`이미지는 최대 ${maxFiles}장까지만 처리됩니다.\n선택하신 파일 중 앞쪽 ${maxFiles}장만 진행합니다.`);
-            files = files.slice(0, maxFiles);
-        }
-
-        const status = document.getElementById('ocrStatus');
-        const progressBar = document.getElementById('progressBar');
-        const progressFill = document.getElementById('progressFill');
-        const resultArea = document.getElementById('resultText');
-        
-        resultArea.value = "";
-        progressBar.style.display = 'block';
-        progressFill.style.width = '0%';
-        
-        let fullResultText = "";
-        
-        status.innerText = "OCR 엔진 초기화 중...";
-        const worker = await Tesseract.createWorker('kor+eng'); 
-
-        try {
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const fileNum = i + 1;
-                status.innerText = `[${fileNum}/${files.length}] 이미지 처리 중... (${file.name})`;
-                
-                const img = await loadImage(file);
-                
-                const sliceHeight = 1500; 
-                const totalSlices = Math.ceil(img.height / sliceHeight);
-                
-                let fileText = `\n=== [Image ${fileNum}: ${file.name}] ===\n`;
-
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = img.width;
-
-                for (let j = 0; j < totalSlices; j++) {
-                    const y = j * sliceHeight;
-                    const h = Math.min(sliceHeight, img.height - y);
-                    
-                    canvas.height = h;
-                    ctx.drawImage(img, 0, y, img.width, h, 0, 0, img.width, h);
-                    
-                    const { data: { text } } = await worker.recognize(canvas);
-                    fileText += text + "\n";
-                    
-                    const currentFileProgress = (j + 1) / totalSlices;
-                    const totalProgress = ((i + currentFileProgress) / files.length) * 100;
-                    progressFill.style.width = `${totalProgress}%`;
-                }
-                
-                fullResultText += fileText + "\n";
-                resultArea.value = fullResultText;
-                resultArea.scrollTop = resultArea.scrollHeight;
-            }
-            
-            status.innerText = `✅ 총 ${files.length}장 텍스트 추출 완료!`;
-            
-        } catch (e) {
-            console.error(e);
-            status.innerText = "❌ 오류 발생: " + e.message;
-            alert("처리 중 오류가 발생했습니다. 콘솔을 확인해주세요.");
-        } finally {
-            await worker.terminate();
-        }
-    }
-
-    // ================= STEP 2: Assembler Logic =================
-    async function generateListing() {
-        const jsonStr = document.getElementById('jsonInput').value;
-        const templateFile = document.getElementById('templateFileInput').files[0];
-
-        if (!templateFile) { alert("먼저 '베이스 HTML 템플릿' 파일을 업로드해주세요!"); return; }
-        if (!jsonStr) { alert("JSON 데이터를 붙여넣어 주세요!"); return; }
-
-        try {
-            const data = JSON.parse(jsonStr);
-            
-            // (1) 타이틀 채우기
-            document.getElementById('titleA').value = data.titles.option_a || "";
-            document.getElementById('titleB').value = data.titles.option_b || "";
-
-            // (2) 스펙 테이블 생성 (확인용)
-            let tableRows = "";
-            for (const key in data.item_specifics) {
-                if (data.item_specifics.hasOwnProperty(key)) {
-                    const specKey = key || "Feature";
-                    const specValue = data.item_specifics[key] || "N/A";
-                    tableRows += `<tr><th>${specKey}</th><td>${specValue}</td></tr>`;
-                }
-            }
-            document.getElementById('specsTable').innerHTML = tableRows;
-            
-            // (3) 주의사항(Caution) 생성
-            let cautionHtmlBlock = "";
-            if (data.caution && data.caution.length > 0) {
-                cautionHtmlBlock = `<div style="margin-top: 25px; background: #fff5f5; padding: 15px; border-radius: 8px;">
-                    <h4 style="color: #d9534f; margin-top:0;">⚠️ Caution</h4>
-                    <ul style="color: #555; padding-left: 20px; margin-bottom: 0;">
-                        ${data.caution.map(c => `<li>${c}</li>`).join('')}
-                    </ul>
-                </div>`;
-            }
-
-            // (4) AI 마케팅 설명 (HTML) 가져오기
-            const marketingHtml = data.description_html || "<p>상세 설명 데이터가 없습니다.</p>";
-
-            // (5) 최종 콘텐츠 합체
-            const fullContentBlock = marketingHtml + cautionHtmlBlock;
-
-            // (6) 파일 읽기 및 조립
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                let templateHtml = e.target.result;
-                const marker = "<!-- REPLACE THIS SECTION WITH PRODUCT-SPECIFIC CONTENT -->";
-
-                if (templateHtml.includes(marker)) {
-                    const finalCode = templateHtml.replace(marker, fullContentBlock);
-                    
-                    document.getElementById('finalHtml').value = finalCode;
-                    document.getElementById('outputArea').style.display = 'block';
-                } else {
-                    alert("⚠️ 오류: 템플릿 파일에서 약속된 주석을 찾을 수 없습니다.\n\n'' \n\n이 문장이 HTML 파일 안에 들어있는지 확인해주세요.");
-                }
-            };
-            reader.readAsText(templateFile);
-
-        } catch (e) {
-            alert("❌ JSON 파싱 오류!\nGems가 준 JSON 데이터 형식을 확인하세요.\n\n오류 내용: " + e.message);
-        }
-    }
-</script>
+<script src="utils.js"></script>
+<script src="ocr.js"></script>
+<script src="assembler.js"></script>
+<script src="ai.js"></script>
 
 </body>
 </html>
